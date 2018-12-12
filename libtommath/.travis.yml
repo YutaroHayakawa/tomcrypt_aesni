@@ -1,0 +1,18 @@
+language: c
+compiler:
+  - gcc
+
+script:
+  - make travis_mtest
+  - head -n 5 test.log
+  - tail -n 2 test.log
+  - ./testme.sh --with-cc=gcc --with-low-mp
+
+branches:
+  only:
+    - master
+    - develop
+    - /^release\/.*$/
+
+notifications:
+  irc: "chat.freenode.net#libtom-notifications"
