@@ -16,6 +16,4 @@ libtomcrypt_aesni.a: $(OBJS)
 
 .PHONY: clean
 clean:
-	-rm test *.o
-	make -C libtomcrypt clean
-	make -C libtommath clean
+	-rm libtomcrypt_aesni.a *.o
