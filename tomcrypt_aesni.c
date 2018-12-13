@@ -230,10 +230,26 @@ aesni_ecb_setup(const unsigned char *key, int keylen, int num_rounds,
 }
 
 int
+aesni_ecb_encrypt(const unsigned char *pt, unsigned char *ct,
+    symmetric_key *skey)
+{
+  aesni_encrypt_ecb(skey->rijndael.Nr, skey->rijndael.eK, AES_BLOCK_LEN, pt, ct);
+  return CRYPT_OK;
+}
+
+int
+aesni_ecb_decrypt(const unsigned char *ct, unsigned char *pt,
+    symmetric_key *skey)
+{
+  aesni_decrypt_ecb(skey->rijndael.Nr, skey->rijndael.dK, AES_BLOCK_LEN, ct, pt);
+  return CRYPT_OK;
+}
+
+int
 aesni_accel_ecb_encrypt(const unsigned char *pt, unsigned char *ct,
     unsigned long blocks, symmetric_key *skey)
 {
-  aesni_encrypt_ecb(skey->rijndael.Nr, skey->rijndael.eK, blocks, pt, ct);
+  aesni_encrypt_ecb(skey->rijndael.Nr, skey->rijndael.eK, blocks * AES_BLOCK_LEN, pt, ct);
   return CRYPT_OK;
 }
 
@@ -241,17 +257,20 @@ int
 aesni_accel_ecb_decrypt(const unsigned char *ct, unsigned char *pt,
     unsigned long blocks, symmetric_key *skey)
 {
-  aesni_decrypt_ecb(skey->rijndael.Nr, skey->rijndael.dK, blocks, ct, pt);
+  aesni_decrypt_ecb(skey->rijndael.Nr, skey->rijndael.dK, blocks * AES_BLOCK_LEN, ct, pt);
   return CRYPT_OK;
 }
+
+struct ltc_cipher_descriptor aesni_desc;
 
 void
 ltc_aesni_overwrite_aes(void)
 {
-  static struct ltc_cipher_descriptor aesni_desc;
   memcpy(&aesni_desc, &aes_desc, sizeof(struct ltc_cipher_descriptor));
 
   aesni_desc.setup = aesni_ecb_setup;
+  aesni_desc.ecb_encrypt = aesni_ecb_encrypt;
+  aesni_desc.ecb_decrypt = aesni_ecb_decrypt;
   aesni_desc.accel_ecb_encrypt = aesni_accel_ecb_encrypt;
   aesni_desc.accel_ecb_decrypt = aesni_accel_ecb_decrypt;
 

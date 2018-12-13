@@ -48,22 +48,54 @@ _aesni_test(uint8_t *pt, uint8_t *ct, int nblocks, uint8_t *key, int key_len)
   int error;
   symmetric_key skey;
 
-  if ((error = aesni_ecb_setup(key, key_len, 0, &skey)) != CRYPT_OK) {
+  ltc_aesni_overwrite_aes();
+
+  if ((error = aesni_desc.setup(key, key_len, 0, &skey)) != CRYPT_OK) {
     return error;
   }
 
-  error = aesni_accel_ecb_encrypt(pt, ct, nblocks * 16, &skey);
+  for (int i = 0; i < nblocks; i++) {
+    error = aesni_desc.ecb_encrypt(pt + i * 16, ct + i * 16, &skey);
+    if (error) {
+      return error;
+    }
+  }
+
+  for (int i = 0; i < nblocks; i++) {
+    error = aesni_desc.ecb_decrypt(ct + i * 16, pt + i * 16, &skey);
+    if (error) {
+      return error;
+    }
+  }
+
+  return 0;
+}
+
+static int
+_aesni_accel_test(uint8_t *pt, uint8_t *ct, int nblocks, uint8_t *key, int key_len)
+{
+  int error;
+  symmetric_key skey;
+
+  ltc_aesni_overwrite_aes();
+
+  if ((error = aesni_desc.setup(key, key_len, 0, &skey)) != CRYPT_OK) {
+    return error;
+  }
+
+  error = aesni_desc.accel_ecb_encrypt(pt, ct, nblocks, &skey);
   if (error) {
     return error;
   }
 
-  error = aesni_accel_ecb_decrypt(ct, pt, nblocks * 16, &skey);
+  error = aesni_desc.accel_ecb_decrypt(ct, pt, nblocks, &skey);
   if (error) {
     return error;
   }
 
   return 0;
 }
+
 
 #ifdef DEBUG
 static int
@@ -102,6 +134,8 @@ main(int argc, char **argv)
           test_func = _aes_test;
         } else if (strcmp(optarg, "aesni") == 0) {
           test_func = _aesni_test;
+        } else if (strcmp(optarg, "aesni_accel") == 0) {
+          test_func = _aesni_accel_test;
         } else {
           fprintf(stderr, "Invalid function (please specify aes | aesni\n");
           return EXIT_FAILURE;
